@@ -23,22 +23,40 @@ public class TankMovement : NetworkBehaviour
     };
 
     
-    private readonly Dictionary<TankInputType, bool> Inputs = new(5);
+    private static byte InputTypeCount => (byte)KeyBindings.Count;
+
+    private float MovementInput;
+    private float RotationInput;
+
+    
+    private readonly Dictionary<TankInputType, bool> InputsStatus = new(InputTypeCount);
 
 
     public override void OnNetworkSpawn()
     {
-        if (GlobalTankProperties.Singleton == null) Debug.LogWarning("GlobalTankProperties in null!"); 
+        if (GlobalTankProperties.Singleton == null) 
+            Debug.LogError("GlobalTankProperties in null!"); 
 
-        ResetInput();
+        if (IsOwner)
+        {
+            ResetInput();
+            SetNetworkTransformRpc(
+                TankSpawnManager.GetSpawnCoordinate(),
+                transform.eulerAngles
+            );
+        }
+
+        name = $"Player {NetworkObjectId} Tank";    
     }
 
     
     private void Update()
     {
-        if (!IsOwner) return;
-        ResetInput();
-        UpdateInput();
+        if (IsOwner)
+        {
+            ResetInput();
+            UpdateInput(out MovementInput, out RotationInput);
+        }
     }
 
     
@@ -46,21 +64,18 @@ public class TankMovement : NetworkBehaviour
     {
         if (IsOwner)
         {
-            ProecessInput();
+            ProecessInputRpc(MovementInput, RotationInput);
         }
         SyncTransform();
     }
 
 
-    private void UpdateInput()
+    private void UpdateInput(out float movementInputValue, out float rotationInputValue)
     {
-        foreach (var inputType in KeyBindings.Keys) Inputs[inputType] = GetInputTypeValue(inputType);
-    }
+        foreach (var inputType in KeyBindings.Keys) InputsStatus[inputType] = GetInputTypeValue(inputType);
 
-    
-    private void ResetInput()
-    {
-        for (byte i = 0; i < 5; i++) Inputs[(TankInputType)i] = false;
+        movementInputValue = ((InputsStatus[TankInputType.Forward] ? 1 : 0) + (InputsStatus[TankInputType.Back] ? -1 : 0)) * Time.fixedDeltaTime;
+        rotationInputValue = ((InputsStatus[TankInputType.RightTurn] ? -1 : 0) + (InputsStatus[TankInputType.LeftTurn] ? 1 : 0)) * Time.fixedDeltaTime;
     }
 
 
@@ -72,12 +87,30 @@ public class TankMovement : NetworkBehaviour
     }
 
 
-    private void ProecessInput()
+    void OnCollisionStay2D(Collision2D collision)
     {
-        float movementInputValue = ((Inputs[TankInputType.Forward] ? 1 : 0) + (Inputs[TankInputType.Back] ? -1 : 0)) * Time.fixedDeltaTime;
-        float rotationInputValue = ((Inputs[TankInputType.RightTurn] ? -1 : 0) + (Inputs[TankInputType.LeftTurn] ? 1 : 0)) * Time.fixedDeltaTime;
-        
-        UpdateTransformServerRpc(
+        SetNetworkTransformToCurrent();
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void SetNetworkTransformToCurrent()
+    {
+        if (IsServer) SetNetworkTransformRpc(transform.position, transform.eulerAngles);
+    }
+
+
+    private void ResetInput()
+    {
+        for (byte i = 0; i < InputTypeCount; i++) InputsStatus[(TankInputType)i] = false;
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [Rpc(SendTo.Server)]
+    private void ProecessInputRpc(float movementInputValue, float rotationInputValue)
+    {
+        SetNetworkTransformRpc(
             TankPosition.Value + movementInputValue * GlobalTankProperties.Singleton.MovementSpeed * TankForward,
             new Vector3(0, 0, TankRotation.Value.z + rotationInputValue * GlobalTankProperties.Singleton.RotationSpeed)
         );
@@ -86,7 +119,7 @@ public class TankMovement : NetworkBehaviour
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Rpc(SendTo.Server)]
-    internal void UpdateTransformServerRpc(Vector3 position, Vector3 eulerRotation, RpcParams rpcParams = default)
+    internal void SetNetworkTransformRpc(Vector3 position, Vector3 eulerRotation)
     {
         TankPosition.Value = position;
         TankRotation.Value = eulerRotation;
