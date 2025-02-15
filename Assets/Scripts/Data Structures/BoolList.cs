@@ -1,29 +1,44 @@
 
 using System.Collections.Generic;
 using System;
+using UnityEngine;
+using System.Runtime.CompilerServices;
 
 public struct BoolList 
 {
-    // private ulong _data;
-    private List<bool> _data;
+    private readonly List<bool> _data;
 
     public readonly int Count => _data.Count;
+
+    
+    public Action<ulong> OnDataChanged;
 
 
     public BoolList(int count)
     {
         _data = new List<bool>(count);
+        OnDataChanged = null;
+        DataInit();
     }
 
 
     public BoolList(int count, ulong data)
     {
-        _data = new(count);
+        _data = new List<bool>(count);
+        OnDataChanged = null;
+        
         for (int i = 0; i < count; i++)
         {
             _data.Add(data % 10 == 1);
             data /= 10;
         }
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DataInit()
+    {
+        for (int i = 0; i < _data.Capacity; i++) _data.Add(false);
     }
 
 
@@ -38,6 +53,7 @@ public struct BoolList
         {
             IndexAssert(index);
             _data[index] = value;
+            OnDataChanged?.Invoke((ulong)this);
         }
     }
 
@@ -48,8 +64,18 @@ public struct BoolList
     }
 
 
-    public void Add(bool value) => _data.Add(value);
-    public void Pop() => _data.RemoveAt(_data.Count - 1);
+    public void Add(bool value) 
+    {
+        _data.Add(value);
+        OnDataChanged?.Invoke((ulong)this);
+    }
+
+
+    public void Pop() 
+    {
+        _data.RemoveAt(_data.Count - 1);
+        OnDataChanged?.Invoke((ulong)this);
+    }
 
 
     public readonly int TrueValuesCount
@@ -57,7 +83,8 @@ public struct BoolList
         get 
         {
             int trueValuesCount = 0;
-            for (int i = 0; i < _data.Count; i++) if (this[i]) trueValuesCount++;
+            for (int i = 0; i < _data.Count; i++) 
+                if (_data[i]) trueValuesCount++;
             return trueValuesCount;
         }
     }

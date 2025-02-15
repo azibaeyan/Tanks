@@ -13,35 +13,65 @@ public class TankSpawnManager : NetworkBehaviour
     private bool _isMainInstance = false;
 
 
-    private NetworkVariable<ulong> SkinsTakenData = new(0);
+    private readonly NetworkVariable<ulong> SkinsTakenData = new();
     public List<Sprite> Skins;
-    private BoolList SkinsTaken;
+    private BoolList SkinsTaken = new(4);
 
 
-    private void OnAwake()
+    private void Awake()
     {
         ApplySingleton();
     }
 
 
-    private byte GetRandomSkinIndex()
+    public byte GetRandomSkinIndex()
     {
         byte availabeSkinsCount = (byte)(SkinsTaken.Count - SkinsTaken.TrueValuesCount);
-        byte skinOrder = (byte)Math.Floor(Random.Range(0.0001f , availabeSkinsCount - Mathf.Epsilon));
+
+        byte skinOrder = (byte)Math.Floor(
+            Random.Range(
+                Mathf.Epsilon, 
+                availabeSkinsCount - Mathf.Epsilon
+            )
+        );
+
         for (byte i = 0; i < SkinsTaken.Count; i++) 
         {
             if (!SkinsTaken[i])
             {
-                if (skinOrder == 0) 
-                {
-                    SkinsTaken[i] = true;
-                    return i;
-                }
+                if (skinOrder == 0) return i;
                 skinOrder--;
             }
         }
 
         throw new Exception("No Tank Skins Where Available");
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Sprite ReserveSkin(byte index)
+    {
+        SkinsTaken[index] = true;
+        return Skins[index];
+    }
+
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Sprite ReserveRandomSkin() => ReserveSkin(GetRandomSkinIndex());
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ReleaseSkin(byte index) => SkinsTaken[index] = false;
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ReleaseSkin(Sprite skin) => ReleaseSkin((byte)Skins.IndexOf(skin));
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void OnSkinOwnerShipChanged(ulong skinTakenData)
+    {
+        if (IsServer) SkinsTakenData.Value = skinTakenData;
     }
 
 
@@ -56,6 +86,7 @@ public class TankSpawnManager : NetworkBehaviour
 
         _instantiated = true;
         _isMainInstance = true;
+        Singleton = this;
         DontDestroyOnLoad(this);
     }
     
