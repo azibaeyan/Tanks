@@ -11,6 +11,7 @@ public sealed class GlobalTankProperties : MonoBehaviour
     [Header("Properties")]
     public float MovementSpeed;
     public float RotationSpeed;
+    public float ShootingCoolDownTimer;
     
     
     private void Awake()

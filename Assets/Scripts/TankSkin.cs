@@ -1,23 +1,25 @@
+
 using Unity.Netcode;
 using UnityEngine;
 
-public class TankSkin : NetworkBehaviour
+namespace Tank
 {
-    private readonly NetworkVariable<byte> SkinIndex = new();
-    public override void OnNetworkSpawn()
+    public class TankSkin : NetworkBehaviour
     {
-        if (IsServer)
+        private readonly NetworkVariable<byte> SkinIndex = new();
+        public override void OnNetworkSpawn()
         {
-            if (TankSpawnManager.Singleton == null)
+            if (IsServer)
             {
-                Debug.LogError("TankSpawnManager Singleton is null!");  // debug
-                return;
+                if (TankSpawnManager.Singleton == null)
+                {
+                    Debug.LogError("TankSpawnManager Singleton is null!");  
+                    return;
+                }
+                SkinIndex.Value = TankSpawnManager.Singleton.GetRandomSkinIndex();
             }
-            SkinIndex.Value = TankSpawnManager.Singleton.GetRandomSkinIndex();
+
+            GetComponent<SpriteRenderer>().sprite = TankSpawnManager.Singleton.ReserveSkin(SkinIndex.Value);
         }
-
-        Debug.Log($"Skin index: {SkinIndex.Value}");  // debug
-
-        GetComponent<SpriteRenderer>().sprite = TankSpawnManager.Singleton.ReserveSkin(SkinIndex.Value);
     }
 }

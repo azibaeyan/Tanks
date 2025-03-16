@@ -6,125 +6,148 @@ using Unity.Netcode;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class TankSpawnManager : NetworkBehaviour
+namespace Tank
 {
-    public static TankSpawnManager Singleton { get; private set; }
-    private bool _instantiated = false;
-    private bool _isMainInstance = false;
-
-
-    private readonly NetworkVariable<ulong> SkinsTakenData = new();
-    public List<Sprite> Skins;
-    private BoolList SkinsTaken = new(4);
-
-
-    private void Awake()
+    public class TankSpawnManager : NetworkBehaviour
     {
-        ApplySingleton();
-    }
+        public static TankSpawnManager Singleton { get; private set; }
+        private bool _instantiated = false;
+        private bool _isMainInstance = false;
 
 
-    public byte GetRandomSkinIndex()
-    {
-        byte availabeSkinsCount = (byte)(SkinsTaken.Count - SkinsTaken.TrueValuesCount);
+        private readonly NetworkVariable<ulong> SkinsTakenData = new();
+        public List<Sprite> SkinsSprites;
+        public List<Sprite> AmmoSprites;
+        [SerializeField] private GameObject bulletPrefab;
+        public GameObject BulletPrefab => bulletPrefab;
+        private BoolList SkinsTaken = new(4);
 
-        byte skinOrder = (byte)Math.Floor(
-            Random.Range(
-                Mathf.Epsilon, 
-                availabeSkinsCount - Mathf.Epsilon
-            )
-        );
 
-        for (byte i = 0; i < SkinsTaken.Count; i++) 
+        private void Awake()
         {
-            if (!SkinsTaken[i])
-            {
-                if (skinOrder == 0) return i;
-                skinOrder--;
-            }
+            ApplySingleton();
         }
 
-        throw new Exception("No Tank Skins Where Available");
-    }
 
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Sprite ReserveSkin(byte index)
-    {
-        SkinsTaken[index] = true;
-        return Skins[index];
-    }
-
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Sprite ReserveRandomSkin() => ReserveSkin(GetRandomSkinIndex());
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ReleaseSkin(byte index) => SkinsTaken[index] = false;
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ReleaseSkin(Sprite skin) => ReleaseSkin((byte)Skins.IndexOf(skin));
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void OnSkinOwnerShipChanged(ulong skinTakenData)
-    {
-        if (IsServer) SkinsTakenData.Value = skinTakenData;
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ApplySingleton()
-    {
-        if (_instantiated) 
+        private void Start()
         {
-            Destroy(this);
-            return;
+            NetworkManager.ConnectionApprovalCallback = ConnectionApprovalCallback;   
         }
 
-        _instantiated = true;
-        _isMainInstance = true;
-        Singleton = this;
-        DontDestroyOnLoad(this);
-    }
-    
 
-    public static Vector2 GetSpawnCoordinate(float distanceWithOthers = 5f)
-    {
-        NetworkManager networkManager = NetworkManager.Singleton;
-
-        Vector2 spawnPoint = Vector2.zero;
-
-        for (sbyte i = 0; i < networkManager.ConnectedClientsList.Count; i++)
+        private void ConnectionApprovalCallback(
+            NetworkManager.ConnectionApprovalRequest request, 
+            NetworkManager.ConnectionApprovalResponse response
+        )
         {
-            NetworkClient client = networkManager.ConnectedClients[(byte)i];
-            if (client.PlayerObject == null) break;
+            response.Approved = true;
+            response.CreatePlayerObject = true;
+            response.Position = GetSpawnCoordinate();
+        }
 
-            if (Vector2.Distance(spawnPoint, client.PlayerObject.transform.position) < distanceWithOthers)
+
+        public byte GetRandomSkinIndex()
+        {
+            byte availabeSkinsCount = (byte)(SkinsTaken.Count - SkinsTaken.TrueValuesCount);
+
+            byte skinOrder = (byte)Math.Floor(
+                Random.Range(
+                    Mathf.Epsilon, 
+                    availabeSkinsCount - Mathf.Epsilon
+                )
+            );
+
+            for (byte i = 0; i < SkinsTaken.Count; i++) 
             {
-                spawnPoint += (GetRandomBool() ? 1 : -1) * distanceWithOthers * (GetRandomBool() ? Vector2.up : Vector2.right);
-                i = -1;
+                if (!SkinsTaken[i])
+                {
+                    if (skinOrder == 0) return i;
+                    skinOrder--;
+                }
             }
-        }   
 
-        return spawnPoint;
-    }  
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetRandomBool() => Random.value > 0.5f;
+            throw new Exception("No Tank Skins Where Available");
+        }
 
 
-    public override void OnDestroy()
-    {
-        base.OnDestroy();
-
-        if (_isMainInstance) 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Sprite ReserveSkin(byte index)
         {
-            _instantiated = false;
-            Singleton = null;
+            SkinsTaken[index] = true;
+            return SkinsSprites[index];
+        }
+
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Sprite ReserveRandomSkin() => ReserveSkin(GetRandomSkinIndex());
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReleaseSkin(byte index) => SkinsTaken[index] = false;
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReleaseSkin(Sprite skin) => ReleaseSkin((byte)SkinsSprites.IndexOf(skin));
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OnSkinOwnerShipChanged(ulong skinTakenData)  // When to use this ? 
+        {
+            if (IsServer) SkinsTakenData.Value = skinTakenData;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ApplySingleton()
+        {
+            if (_instantiated) 
+            {
+                Destroy(this);
+                return;
+            }
+
+            _instantiated = true;
+            _isMainInstance = true;
+            Singleton = this;
+            DontDestroyOnLoad(this);
+        }
+        
+
+        public static Vector2 GetSpawnCoordinate(float distanceWithOthers = 5f)
+        {
+            NetworkManager networkManager = NetworkManager.Singleton;
+
+            Vector2 spawnPoint = Vector2.zero;
+
+            for (sbyte i = 0; i < networkManager.ConnectedClientsList.Count; i++)
+            {
+                NetworkClient client = networkManager.ConnectedClients[(byte)i];
+                if (client.PlayerObject == null) break;
+
+                if (Vector2.Distance(spawnPoint, client.PlayerObject.transform.position) < distanceWithOthers)
+                {
+                    spawnPoint += (GetRandomBool() ? 1 : -1) * distanceWithOthers * (GetRandomBool() ? Vector2.up : Vector2.right);
+                    i = -1;
+                }
+            }   
+
+            return spawnPoint;
+        }  
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool GetRandomBool() => Random.value > 0.5f;
+
+
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            if (_isMainInstance) 
+            {
+                _instantiated = false;
+                Singleton = null;
+            }
         }
     }
 }
