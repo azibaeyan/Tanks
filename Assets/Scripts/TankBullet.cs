@@ -8,22 +8,88 @@ namespace Tank
     public class TankBullet : NetworkBehaviour
     {
         private Vector3 Forward => transform.up;
+
+        private readonly NetworkVariable<byte> SkinIndex = new();
+
+        public Vector3 SpawnPosition;
         
         [SerializeField] private float Speed;
+        [SerializeField] private float DamageAmount;
+
+        private float LifeTime;
 
         internal readonly NetworkVariable<Vector3> NetworkPosition = new();
 
 
+        public void SetSkinIndex(byte index) 
+        {
+            SkinIndex.Initialize(this);
+            SkinIndex.Value = index;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetNetworkPosition(Vector3 position)
+        {
+            NetworkPosition.Initialize(this);
+            NetworkPosition.Value = position;
+        }
+
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer) 
+            {
+                LifeTime = GlobalTankProperties.Singleton.BulletLifeTime;
+                transform.position = NetworkPosition.Value;
+            }
+
+            SpriteRenderer renderer = GetComponent<SpriteRenderer>();
+            renderer.sprite = TankSpawnManager.Singleton.AmmoSprites[SkinIndex.Value];
+        }
+
+
+        private void Start()
+        {
+            SyncTransform();
+        }
+
+
         private void FixedUpdate()
         {
-            if (IsOwner) MoveForward();
+            CheckBulletLifeTime();
+
+            if (IsSpawned && IsOwner) MoveForwardRpc();
 
             SyncTransform();
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MoveForward() => transform.position += Speed * Time.fixedDeltaTime * Forward;
+        private void CheckBulletLifeTime()
+        {
+            if (IsServer)
+            {
+                LifeTime -= Time.fixedDeltaTime;
+                if (LifeTime <= 0) GetComponent<NetworkObject>().Despawn(true);
+            }
+        }
+
+
+        void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (IsServer)
+            {
+                if (collision.gameObject.CompareTag(GlobalTankProperties.Tag)) 
+                    collision.gameObject.GetComponent<TankHealth>().OnDamage(DamageAmount);
+
+                GetComponent<NetworkObject>().Despawn(true);
+            }
+        }
+
+
+        [Rpc(SendTo.Server)]
+        private void MoveForwardRpc() => NetworkPosition.Value += Speed * Time.fixedDeltaTime * Forward;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

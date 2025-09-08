@@ -14,7 +14,7 @@ namespace Tank
 
         [SerializeField] private BoxCollider2D Collider;
 
-        private Vector3 TankForward => transform.up * -1;
+        public Vector3 TankForward => transform.up * -1;
 
         private TankInput TankInputComponent;
 

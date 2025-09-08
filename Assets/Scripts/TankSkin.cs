@@ -6,7 +6,7 @@ namespace Tank
 {
     public class TankSkin : NetworkBehaviour
     {
-        private readonly NetworkVariable<byte> SkinIndex = new();
+        public readonly NetworkVariable<byte> SkinIndex = new();
         public override void OnNetworkSpawn()
         {
             if (IsServer)

@@ -7,11 +7,15 @@ public sealed class GlobalTankProperties : MonoBehaviour
     private static bool Instantiated = false;
     private bool IsMainInstance = false;
 
+    public const string Tag = "Tank";
+
 
     [Header("Properties")]
     public float MovementSpeed;
     public float RotationSpeed;
     public float ShootingCoolDownTimer;
+    public float BulletSpawnDistance;
+    public float BulletLifeTime;
     
     
     private void Awake()

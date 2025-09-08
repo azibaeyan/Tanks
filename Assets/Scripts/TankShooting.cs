@@ -1,4 +1,4 @@
-using System;
+
 using Unity.Netcode;
 using UnityEngine;
 
@@ -8,11 +8,24 @@ namespace Tank
     {
         private readonly NetworkVariable<float> ShootingCoolDownTimer = new();
         private TankInput InputComponent;
+        private TankMovement MovementComponent;
+        private TankSkin SkinComponent;
 
 
         private void Awake()
         {
             InputComponent = GetComponent<TankInput>();
+            MovementComponent = GetComponent<TankMovement>();
+            SkinComponent = GetComponent<TankSkin>();
+        }
+
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsOwner)
+            {
+                ResetCoolDownTimerRpc();
+            }
         }
 
 
@@ -33,12 +46,27 @@ namespace Tank
 
             if (fireInput)
             {
-                NetworkObject bulletObjectPrefab = TankSpawnManager.Singleton.BulletPrefab.GetComponent<NetworkObject>();
-                
-                bulletObjectPrefab.InstantiateAndSpawn(
-                    NetworkManager,
-                    OwnerClientId
+                ResetCoolDownTimerRpc();
+
+                GlobalTankProperties tankProperties = GlobalTankProperties.Singleton;
+
+                Vector3 bulletSpawnPosition = transform.position + MovementComponent.TankForward * tankProperties.BulletSpawnDistance;
+                Quaternion bulletSpawnRotation = Quaternion.Euler(transform.rotation.eulerAngles - new Vector3(0, 0, 180));
+
+                GameObject instantiatedBullet = Instantiate(
+                    TankSpawnManager.Singleton.BulletPrefab,
+                    bulletSpawnPosition, 
+                    bulletSpawnRotation
                 );
+
+                TankBullet bulletComponent = instantiatedBullet.GetComponent<TankBullet>();
+                bulletComponent.SetNetworkPosition(bulletSpawnPosition);
+
+                bulletComponent.SetSkinIndex(SkinComponent.SkinIndex.Value);
+
+                NetworkObject bulletNetworkObject = instantiatedBullet.GetComponent<NetworkObject>();
+                bulletNetworkObject.Spawn();
+
             }
         }
 
@@ -46,7 +74,14 @@ namespace Tank
         [Rpc(SendTo.Server)]
         private void ProcessTimerRpc()
         {
-            ShootingCoolDownTimer.Value = Math.Min(ShootingCoolDownTimer.Value - Time.fixedDeltaTime, 0);
+            ShootingCoolDownTimer.Value -= Time.fixedDeltaTime;
         }
+        
+
+        [Rpc(SendTo.Server)]
+        private void ResetCoolDownTimerRpc()
+        {   
+            ShootingCoolDownTimer.Value = GlobalTankProperties.Singleton.ShootingCoolDownTimer;
+        }   
     }
 }
