@@ -15,7 +15,6 @@ namespace Tank
         private bool _isMainInstance = false;
 
 
-        private readonly NetworkVariable<ulong> SkinsTakenData = new();
         public List<Sprite> SkinsSprites;
         public List<Sprite> AmmoSprites;
         [SerializeField] private GameObject bulletPrefab;
@@ -77,10 +76,6 @@ namespace Tank
             return SkinsSprites[index];
         }
 
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Sprite ReserveRandomSkin() => ReserveSkin(GetRandomSkinIndex());
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReleaseSkin(byte index) => SkinsTaken[index] = false;
@@ -88,13 +83,6 @@ namespace Tank
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReleaseSkin(Sprite skin) => ReleaseSkin((byte)SkinsSprites.IndexOf(skin));
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OnSkinOwnerShipChanged(ulong skinTakenData)  // When to use this ? 
-        {
-            if (IsServer) SkinsTakenData.Value = skinTakenData;
-        }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

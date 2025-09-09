@@ -6,39 +6,28 @@ using System.Runtime.CompilerServices;
 
 public struct BoolList 
 {
-    private readonly List<bool> _data;
+    private ushort _data;
+    private ushort _count;
 
-    public readonly int Count => _data.Count;
+    public readonly uint Count => _count;
 
     
     public Action<ulong> OnDataChanged;
 
 
-    public BoolList(int count)
+    public BoolList(ushort count)
     {
-        _data = new List<bool>(count);
+        _data = 0;
+        _count = 0;
         OnDataChanged = null;
-        DataInit();
     }
 
 
-    public BoolList(int count, ulong data)
+    public BoolList(ushort count, ushort data)
     {
-        _data = new List<bool>(count);
+        _data = data;
+        _count = count;
         OnDataChanged = null;
-        
-        for (int i = 0; i < count; i++)
-        {
-            _data.Add(data % 10 == 1);
-            data /= 10;
-        }
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void DataInit()
-    {
-        for (int i = 0; i < _data.Capacity; i++) _data.Add(false);
     }
 
 
@@ -47,12 +36,12 @@ public struct BoolList
         readonly get 
         {
             IndexAssert(index);
-            return _data[index];
+            return (_data >> index & 0b1) == 1;
         }
         set
         {
             IndexAssert(index);
-            _data[index] = value;
+            value = (_data >> index & 0b1) == 1;
             OnDataChanged?.Invoke((ulong)this);
         }
     }
@@ -60,20 +49,21 @@ public struct BoolList
 
     private readonly void IndexAssert(int index)
     {
-        if (index >= _data.Count) throw new IndexOutOfRangeException();
+        if (index >= _count) throw new IndexOutOfRangeException();
     }
 
 
     public void Add(bool value) 
     {
-        _data.Add(value);
+        _data = (ushort)((_data & ((0b1 << _count) - 0b1)) | ((value ? 0b0 : 0b1) << _count));
+        _count++;
         OnDataChanged?.Invoke((ulong)this);
     }
 
 
     public void Pop() 
     {
-        _data.RemoveAt(_data.Count - 1);
+        _count--;
         OnDataChanged?.Invoke((ulong)this);
     }
 
@@ -83,29 +73,11 @@ public struct BoolList
         get 
         {
             int trueValuesCount = 0;
-            for (int i = 0; i < _data.Count; i++) 
-                if (_data[i]) trueValuesCount++;
+            for (int i = 0; i < _count; i++) if (((_data >> i) & 0b1) == 1) trueValuesCount++;
             return trueValuesCount;
         }
     }
 
 
-    public static explicit operator ulong(BoolList boolList)
-    {
-        ulong data = 0;
-
-        for (int i = 0; i < boolList._data.Count; i++)
-            if (boolList._data[i]) data += (ulong)Math.Pow(10, i);
-
-        return data;
-    }
-
-    public static implicit operator BoolList(ulong data) 
-    {
-        int count = 0;
-        while (data > Math.Pow(10, count)) count++;
-        count++;
-
-        return new BoolList(count, data);
-    }
+    public static explicit operator ushort(BoolList boolList) => boolList._data;
 }

@@ -4,7 +4,6 @@ using UnityEngine;
 public sealed class GlobalTankProperties : MonoBehaviour
 {
     public static GlobalTankProperties Singleton;
-    private static bool Instantiated = false;
     private bool IsMainInstance = false;
 
     public const string Tag = "Tank";
@@ -20,8 +19,6 @@ public sealed class GlobalTankProperties : MonoBehaviour
     
     private void Awake()
     {
-        Singleton = this;
-
         ApplySingleton();
     }
 
@@ -29,17 +26,17 @@ public sealed class GlobalTankProperties : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ApplySingleton()
     {
-        if (Instantiated) Destroy(this);
+        if (Singleton != null) Destroy(this);
         else
         {
-            IsMainInstance = Instantiated = true;
-            DontDestroyOnLoad(this);
+            IsMainInstance = true;
+            Singleton = this;
         }
     }
 
-    
-    private void OnDestroy() 
+
+    private void OnDestroy()
     {
-        if (IsMainInstance) Instantiated = false;
+        if (IsMainInstance) Singleton = null;
     }
 }

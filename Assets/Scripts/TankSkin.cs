@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Tank
 {
+    [RequireComponent(typeof(SpriteRenderer))]
     public class TankSkin : NetworkBehaviour
     {
         public readonly NetworkVariable<byte> SkinIndex = new();
@@ -16,6 +17,7 @@ namespace Tank
                     Debug.LogError("TankSpawnManager Singleton is null!");  
                     return;
                 }
+                
                 SkinIndex.Value = TankSpawnManager.Singleton.GetRandomSkinIndex();
             }
 
