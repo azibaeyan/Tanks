@@ -1,7 +1,5 @@
 
-using System.Collections.Generic;
 using System;
-using UnityEngine;
 using System.Runtime.CompilerServices;
 
 public struct BoolList 
@@ -18,7 +16,7 @@ public struct BoolList
     public BoolList(ushort count)
     {
         _data = 0;
-        _count = 0;
+        _count = count;
         OnDataChanged = null;
     }
 
@@ -35,19 +33,20 @@ public struct BoolList
     {
         readonly get 
         {
-            IndexAssert(index);
-            return (_data >> index & 0b1) == 1;
+            AssertIndex(index);
+            return (_data >> index & 1) == 1;
         }
         set
         {
-            IndexAssert(index);
-            value = (_data >> index & 0b1) == 1;
+            AssertIndex(index);
+            _data = (ushort)((_data & ~(1 << index)) | ((value ? 1 : 0) << index));
             OnDataChanged?.Invoke((ulong)this);
         }
     }
 
 
-    private readonly void IndexAssert(int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private readonly void AssertIndex(int index)
     {
         if (index >= _count) throw new IndexOutOfRangeException();
     }
@@ -73,7 +72,7 @@ public struct BoolList
         get 
         {
             int trueValuesCount = 0;
-            for (int i = 0; i < _count; i++) if (((_data >> i) & 0b1) == 1) trueValuesCount++;
+            for (int i = 0; i < _count; i++) if (this[i]) trueValuesCount++;
             return trueValuesCount;
         }
     }

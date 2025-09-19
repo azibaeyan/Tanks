@@ -28,14 +28,20 @@ namespace Tank
         }
 
 
+        // protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+        // {
+        //     base.OnNetworkPreSpawn(ref networkManager);
+        // }
+
+
         private void Start()
         {
-            NetworkManager.ConnectionApprovalCallback = ConnectionApprovalCallback;   
+            NetworkManager.ConnectionApprovalCallback = ConnectionApprovalCallback;
         }
 
 
-        private void ConnectionApprovalCallback(
-            NetworkManager.ConnectionApprovalRequest request, 
+        private static void ConnectionApprovalCallback(
+            NetworkManager.ConnectionApprovalRequest request,
             NetworkManager.ConnectionApprovalResponse response
         )
         {
@@ -51,12 +57,12 @@ namespace Tank
 
             byte skinOrder = (byte)Math.Floor(
                 Random.Range(
-                    Mathf.Epsilon, 
+                    0, 
                     availabeSkinsCount - Mathf.Epsilon
                 )
             );
 
-            for (byte i = 0; i < SkinsTaken.Count; i++) 
+            for (byte i = 0; i < SkinsTaken.Count; i++)
             {
                 if (!SkinsTaken[i])
                 {

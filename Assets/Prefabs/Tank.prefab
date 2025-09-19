@@ -11,12 +11,13 @@ GameObject:
   - component: {fileID: 5928417120607914554}
   - component: {fileID: 3339440621837727646}
   - component: {fileID: 773660132839229795}
-  - component: {fileID: 9085893297072206489}
+  - component: {fileID: 3509098939928304679}
   - component: {fileID: 4633908772262985379}
+  - component: {fileID: 405772959773693897}
   - component: {fileID: -7834502199301912944}
-  - component: {fileID: 4230959245886963010}
   - component: {fileID: 8536020573724280008}
   - component: {fileID: -4122140849782482951}
+  - component: {fileID: 1797552770780636515}
   - component: {fileID: 3314098029546975332}
   - component: {fileID: -6217664646204339522}
   m_Layer: 0
@@ -61,6 +62,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -82,6 +85,7 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -121,7 +125,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &9085893297072206489
+--- !u!114 &3509098939928304679
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -130,11 +134,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8564247231832827719}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e839c92050d6e6b4394c4c4e4cbb1660, type: 3}
+  m_Script: {fileID: 11500000, guid: f175e4e0930f2fd42866ce3163bd5fb1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkTransformSync
   ShowTopMostFoldoutHeaderGroup: 1
-  Collider: {fileID: -7834502199301912944}
+  _localTransform: 0
+  _positionInterpolationMaxDelta: 0.12
+  _rotationInterpolationQuaternionMaxDelta: 0.9
+  _enableColliderEffect: 1
 --- !u!114 &4633908772262985379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,6 +155,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!50 &405772959773693897
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8564247231832827719}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 1
+  m_Constraints: 0
 --- !u!61 &-7834502199301912944
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -194,33 +228,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.84, y: 0.92}
   m_EdgeRadius: 0
---- !u!50 &4230959245886963010
-Rigidbody2D:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8564247231832827719}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_GravityScale: 0
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 1
-  m_Constraints: 0
 --- !u!114 &8536020573724280008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,6 +253,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b840d9646f2ddee4488887b4bfbcf8c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1797552770780636515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8564247231832827719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fb8f72efc7583146be8ce8971b8bdc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Tank.TankInputProcessing
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &3314098029546975332
 MonoBehaviour:

@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace Tank
 {
+    [RequireComponent(typeof(SpriteRenderer))]
+    [RequireComponent(typeof(NetworkObject))]
     public class TankBullet : NetworkBehaviour
     {
         private Vector3 Forward => transform.up;
@@ -80,7 +82,7 @@ namespace Tank
         {
             if (IsServer)
             {
-                if (collision.gameObject.CompareTag(GlobalTankProperties.Tag)) 
+                if (collision.gameObject.CompareTag(GlobalTankProperties.TankTag)) 
                     collision.gameObject.GetComponent<TankHealth>().OnDamage(DamageAmount);
 
                 GetComponent<NetworkObject>().Despawn(true);

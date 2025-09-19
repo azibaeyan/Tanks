@@ -28,15 +28,23 @@ namespace Tank
             Fire
         }
 
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            ResetInput();
+        }
+
+
         private void Update()
         {
             if (IsOwner)
             {
                 ResetInput();
-                
+
                 UpdateMovementInput(
-                    out _movementInput, 
-                    out _rotationInput, 
+                    out _movementInput,
+                    out _rotationInput,
                     out _fireInput
                 );
             }

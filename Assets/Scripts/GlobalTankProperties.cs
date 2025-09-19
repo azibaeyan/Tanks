@@ -6,7 +6,7 @@ public sealed class GlobalTankProperties : MonoBehaviour
     public static GlobalTankProperties Singleton;
     private bool IsMainInstance = false;
 
-    public const string Tag = "Tank";
+    public const string TankTag = "Tank";
 
 
     [Header("Properties")]
