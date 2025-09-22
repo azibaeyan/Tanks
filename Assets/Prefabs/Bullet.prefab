@@ -197,8 +197,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  TransformSyncComponent: {fileID: 0}
   SpawnPosition: {x: 0, y: 0, z: 0}
-  Speed: 5
+  Speed: 7
   DamageAmount: 2
 --- !u!114 &7771466580766918560
 MonoBehaviour:
@@ -216,4 +217,6 @@ MonoBehaviour:
   _localTransform: 0
   _positionInterpolationMaxDelta: 0.12
   _rotationInterpolationQuaternionMaxDelta: 0.9
+  _positionSync: 1
+  _rotationSync: 0
   _enableColliderEffect: 0

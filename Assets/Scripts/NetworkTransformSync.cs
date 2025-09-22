@@ -1,5 +1,6 @@
-using Unity.Mathematics;
+
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class NetworkTransformSync : NetworkBehaviour
@@ -44,6 +45,9 @@ public class NetworkTransformSync : NetworkBehaviour
 
     [SerializeField] private float _positionInterpolationMaxDelta;
     [SerializeField] private float _rotationInterpolationQuaternionMaxDelta;
+
+    [SerializeField] private bool _positionSync = true;
+    [SerializeField] private bool _rotationSync = true;
 
     [SerializeField] private bool _enableColliderEffect;
     public bool EnableColliderEffect
@@ -105,56 +109,19 @@ public class NetworkTransformSync : NetworkBehaviour
     }
 
 
-    public void SetServerNetworkTransform(Vector3 position, Vector3 rotationEuler)
-    {
-        if (!IsServer) return;
-        Position.Value = position;
-        RotationEuler.Value = rotationEuler;
-    }
-
-
-    public void SetServerNetworkTransform(Vector3 position, Quaternion rotationQuaternion)
-    {
-        if (!IsServer) return;
-        Position.Value = position;
-        RotationEuler.Value = rotationQuaternion.eulerAngles;
-    }
-
-
-    public void SetServerPositionTransform(Vector3 position)
-    {
-        if (!IsServer) return;
-        Position.Value = position;
-    }
-
-
-    public void SetServerRotationEuler(Vector3 rotationEuler)
-    {
-        if (!IsServer) return;
-        RotationEuler.Value = rotationEuler;
-    }
-
-
-    public void SetServerRotationQuaternion(Quaternion rotationQuaternion)
-    {
-        if (!IsServer) return;
-        RotationEuler.Value = rotationQuaternion.eulerAngles;
-    }
-
-
     [Rpc(SendTo.Server)]
     public void SetNetworkTransformRpc(Vector3 position, Vector3 rotationEuler)
     {
-        Position.Value = position;
-        RotationEuler.Value = rotationEuler;
+        if (_positionSync) Position.Value = position;
+        if (_rotationSync) RotationEuler.Value = rotationEuler;
     }
 
 
     [Rpc(SendTo.Server)]
     public void SetNetworkTransformRpc(Vector3 position, Quaternion rotationQuaternion)
     {
-        Position.Value = position;
-        RotationEuler.Value = rotationQuaternion.eulerAngles;
+        if (_positionSync) Position.Value = position;
+        if (_rotationSync) RotationEuler.Value = rotationQuaternion.eulerAngles;
     }
 
 
@@ -170,8 +137,8 @@ public class NetworkTransformSync : NetworkBehaviour
 
     public void SetNetworkTransformFromLocal()
     {
-        SetNetworkPositionFromLocal();
-        SetNetworkRotationFromLocal();
+        if (_positionSync) SetNetworkPositionFromLocal();
+        if (_rotationSync) SetNetworkRotationFromLocal();
     }
 
 
@@ -199,31 +166,28 @@ public class NetworkTransformSync : NetworkBehaviour
 
     private void InterpolateClientTransformSync()
     {
-        Vector3 positionValue = Vector3.MoveTowards(
-            transform.position,
-            Position.Value,
-            _positionInterpolationMaxDelta
-        );
-
-        Quaternion rotationValue = Quaternion.Lerp(
-            transform.rotation,
-            Quaternion.Euler(RotationEuler.Value),
-            _rotationInterpolationQuaternionMaxDelta
-        );
-
-        if (_localTransform)
+        if (_positionSync)
         {
-            transform.SetLocalPositionAndRotation(
-                positionValue,
-                rotationValue
+            Vector3 positionValue = Vector3.MoveTowards(
+                transform.position,
+                Position.Value,
+                _positionInterpolationMaxDelta
             );
+
+            if (_localTransform) transform.localPosition = positionValue;
+            else transform.position = positionValue;
         }
-        else
+
+        if (_rotationSync)
         {
-            transform.SetPositionAndRotation(
-                positionValue,
-                rotationValue
+            Quaternion rotationValue = Quaternion.Lerp(
+                transform.rotation,
+                Quaternion.Euler(RotationEuler.Value),
+                _rotationInterpolationQuaternionMaxDelta
             );
+
+            if (_localTransform) transform.localRotation = rotationValue;
+            else transform.rotation = rotationValue;
         }
     }
 }

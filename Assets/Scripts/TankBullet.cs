@@ -1,5 +1,6 @@
 
 using System.Runtime.CompilerServices;
+using Unity.Burst.Intrinsics;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -7,43 +8,36 @@ namespace Tank
 {
     [RequireComponent(typeof(SpriteRenderer))]
     [RequireComponent(typeof(NetworkObject))]
+    [RequireComponent(typeof(NetworkTransformSync))]
     public class TankBullet : NetworkBehaviour
     {
         private Vector3 Forward => transform.up;
 
+        [HideInInspector] public NetworkTransformSync TransformSyncComponent;
+
         private readonly NetworkVariable<byte> SkinIndex = new();
 
         public Vector3 SpawnPosition;
-        
+
         [SerializeField] private float Speed;
         [SerializeField] private float DamageAmount;
 
         private float LifeTime;
 
-        internal readonly NetworkVariable<Vector3> NetworkPosition = new();
 
-
-        public void SetSkinIndex(byte index) 
+        public void SetSkinIndex(byte index)
         {
             SkinIndex.Initialize(this);
             SkinIndex.Value = index;
         }
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetNetworkPosition(Vector3 position)
-        {
-            NetworkPosition.Initialize(this);
-            NetworkPosition.Value = position;
-        }
-
-
         public override void OnNetworkSpawn()
         {
-            if (IsServer) 
+            if (IsServer)
             {
                 LifeTime = GlobalTankProperties.Singleton.BulletLifeTime;
-                transform.position = NetworkPosition.Value;
+
             }
 
             SpriteRenderer renderer = GetComponent<SpriteRenderer>();
@@ -51,9 +45,9 @@ namespace Tank
         }
 
 
-        private void Start()
+        private void Awake()
         {
-            SyncTransform();
+            TransformSyncComponent = GetComponent<NetworkTransformSync>();
         }
 
 
@@ -61,9 +55,7 @@ namespace Tank
         {
             CheckBulletLifeTime();
 
-            if (IsSpawned && IsOwner) MoveForwardRpc();
-
-            SyncTransform();
+            if (IsSpawned && IsServer) MoveForward();
         }
 
 
@@ -82,22 +74,21 @@ namespace Tank
         {
             if (IsServer)
             {
-                if (collision.gameObject.CompareTag(GlobalTankProperties.TankTag)) 
+                if (collision.gameObject.CompareTag(GlobalTankProperties.TankTag))
                     collision.gameObject.GetComponent<TankHealth>().OnDamage(DamageAmount);
 
-                GetComponent<NetworkObject>().Despawn(true);
+                NetworkObject.Despawn(true);
             }
         }
 
 
-        [Rpc(SendTo.Server)]
-        private void MoveForwardRpc() => NetworkPosition.Value += Speed * Time.fixedDeltaTime * Forward;
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SyncTransform()
+        private void MoveForward()
         {
-            transform.position = NetworkPosition.Value;
+            Vector3 offest = Speed * Time.fixedDeltaTime * Forward;
+
+            TransformSyncComponent.SetNetworkPositionRpc(
+                TransformSyncComponent.Position.Value + offest
+            );
         }
     }
 }

@@ -25,14 +25,18 @@ namespace Tank
         {
             if (IsOwner)
             {
-                // Debug.Log($"Prcessing Input [movement: {_tankInputComponent.MovementInput}, rotation: {_tankInputComponent.RotationInput}]");  // debug 
+                bool movementInputReceived = _tankInputComponent.MovementInput != 0;
+                bool rotationInputRecieved = _tankInputComponent.RotationInput != 0;
 
-                if (_tankInputComponent.MovementInput != 0 ||
-                    _tankInputComponent.RotationInput != 0)
-                    ProcessInputRpc(
-                        _tankInputComponent.MovementInput,
-                        _tankInputComponent.RotationInput
-                    );
+                if (movementInputReceived || rotationInputRecieved)
+                {
+                    if (movementInputReceived && rotationInputRecieved)
+                        ProcessInputRpc(_tankInputComponent.MovementInput, _tankInputComponent.RotationInput);
+                    else if (movementInputReceived)
+                        ProcessPositionInputRpc(_tankInputComponent.MovementInput);
+                    else
+                        ProcessRotationInputRpc(_tankInputComponent.RotationInput);
+                }
             }
         }
 
@@ -40,12 +44,40 @@ namespace Tank
         [Rpc(SendTo.Server)]
         private void ProcessInputRpc(float movementInputValue, float rotationInputValue)
         {
-            Vector3 positionValue = _transformSyncComponent.Position.Value + GlobalTankProperties.Singleton.MovementSpeed * movementInputValue * TankForward;
-            Vector3 rotationEulerValue = new(0, 0, SimplifyEulerRotation(_transformSyncComponent.RotationEuler.Value.z + rotationInputValue * GlobalTankProperties.Singleton.RotationSpeed));
+            Vector3 positionValue = CalculatePositionValueFromInput(movementInputValue);
+            Vector3 rotationEulerValue = CalculateRotationValueFromInput(rotationInputValue);
 
-            // Debug.Log($"PositionValue: {positionValue}, RotationValue: {rotationEulerValue}");  // debug
+            _transformSyncComponent.SetNetworkTransformRpc(positionValue, rotationEulerValue);
+        }
 
-            _transformSyncComponent.SetServerNetworkTransform(positionValue, rotationEulerValue);
+
+        [Rpc(SendTo.Server)]
+        private void ProcessPositionInputRpc(float movementInputValue)
+        {
+            Vector3 positionValue = CalculatePositionValueFromInput(movementInputValue);
+            _transformSyncComponent.SetNetworkPositionRpc(positionValue);
+        }
+
+
+        [Rpc(SendTo.Server)]
+        private void ProcessRotationInputRpc(float rotationInputValue)
+        {
+            Vector3 rotationEulerValue = CalculateRotationValueFromInput(rotationInputValue);
+            _transformSyncComponent.SetNetworkRotationEulerRpc(rotationEulerValue);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Vector3 CalculatePositionValueFromInput(float movementInputValue)
+        {
+            return _transformSyncComponent.Position.Value + GlobalTankProperties.Singleton.MovementSpeed * movementInputValue * TankForward;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Vector3 CalculateRotationValueFromInput(float rotationInputValue)
+        {
+            return new(0, 0, SimplifyEulerRotation(_transformSyncComponent.RotationEuler.Value.z + rotationInputValue * GlobalTankProperties.Singleton.RotationSpeed));
         }
 
 

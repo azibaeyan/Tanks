@@ -1,4 +1,5 @@
 
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -6,19 +7,24 @@ namespace Tank
 {
     [RequireComponent(typeof(TankInput))]
     [RequireComponent(typeof(TankSkin))]
+    [RequireComponent(typeof(TankInventory))]
     public class TankFireInputProcessor : NetworkBehaviour
     {
         private readonly NetworkVariable<float> ShootingCoolDownTimer = new();
-        private TankInput InputComponent;
-        private TankSkin SkinComponent;
+        private TankInput _inputComponent;
+        private TankSkin _skinComponent;
+        private TankInventory _tankInventory;
 
         public Vector3 TankForward => -transform.up;
+
+        public Action OnFireCallback = null;
 
 
         private void Awake()
         {
-            InputComponent = GetComponent<TankInput>();
-            SkinComponent = GetComponent<TankSkin>();
+            _inputComponent = GetComponent<TankInput>();
+            _skinComponent = GetComponent<TankSkin>();
+            _tankInventory = GetComponent<TankInventory>();
         }
 
 
@@ -36,7 +42,7 @@ namespace Tank
             if (IsOwner) 
             {
                 ProcessTimerRpc();
-                if (InputComponent.FireInput) FireInputRpc();
+                if (_inputComponent.FireInput) FireInputRpc();
             }
         }
 
@@ -45,7 +51,9 @@ namespace Tank
         private void FireInputRpc()
         {
             if (ShootingCoolDownTimer.Value > 0) return;
-            
+
+            if (_tankInventory.BulletCount == 0) return;
+
             ResetCoolDownTimerRpc();
 
             GlobalTankProperties tankProperties = GlobalTankProperties.Singleton;
@@ -55,17 +63,19 @@ namespace Tank
 
             GameObject instantiatedBullet = Instantiate(
                 TankSpawnManager.Singleton.BulletPrefab,
-                bulletSpawnPosition, 
+                bulletSpawnPosition,
                 bulletSpawnRotation
             );
 
             TankBullet bulletComponent = instantiatedBullet.GetComponent<TankBullet>();
-            bulletComponent.SetNetworkPosition(bulletSpawnPosition);
+            bulletComponent.TransformSyncComponent.SetNetworkPositionRpc(bulletSpawnPosition);
 
-            bulletComponent.SetSkinIndex(SkinComponent.SkinIndex.Value);
+            bulletComponent.SetSkinIndex(_skinComponent.SkinIndex.Value);
 
             NetworkObject bulletNetworkObject = instantiatedBullet.GetComponent<NetworkObject>();
             bulletNetworkObject.Spawn();
+
+            OnFireCallback?.Invoke();
         }
 
         

@@ -28,12 +28,6 @@ namespace Tank
         }
 
 
-        // protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
-        // {
-        //     base.OnNetworkPreSpawn(ref networkManager);
-        // }
-
-
         private void Start()
         {
             NetworkManager.ConnectionApprovalCallback = ConnectionApprovalCallback;

@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 1797552770780636515}
   - component: {fileID: 3314098029546975332}
   - component: {fileID: -6217664646204339522}
+  - component: {fileID: 6445562052392920263}
   m_Layer: 0
   m_Name: Tank
   m_TagString: Tank
@@ -141,6 +142,8 @@ MonoBehaviour:
   _localTransform: 0
   _positionInterpolationMaxDelta: 0.12
   _rotationInterpolationQuaternionMaxDelta: 0.9
+  _positionSync: 1
+  _rotationSync: 1
   _enableColliderEffect: 1
 --- !u!114 &4633908772262985379
 MonoBehaviour:
@@ -294,3 +297,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _healthAmount: 10
+--- !u!114 &6445562052392920263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8564247231832827719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3795a4865c7f76e4f8e29e8d56c5f454, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Tank.TankInventory
+  ShowTopMostFoldoutHeaderGroup: 1
