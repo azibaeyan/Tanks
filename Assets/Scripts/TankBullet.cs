@@ -1,6 +1,5 @@
 
 using System.Runtime.CompilerServices;
-using Unity.Burst.Intrinsics;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,11 +8,14 @@ namespace Tank
     [RequireComponent(typeof(SpriteRenderer))]
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(NetworkTransformSync))]
+    [RequireComponent(typeof(Rigidbody2D))]
     public class TankBullet : NetworkBehaviour
     {
         private Vector3 Forward => transform.up;
 
-        [HideInInspector] public NetworkTransformSync TransformSyncComponent;
+        internal NetworkTransformSync TransformSyncComponent;
+
+        private Rigidbody2D _bulletRigidbody;
 
         private readonly NetworkVariable<byte> SkinIndex = new();
 
@@ -48,6 +50,7 @@ namespace Tank
         private void Awake()
         {
             TransformSyncComponent = GetComponent<NetworkTransformSync>();
+            _bulletRigidbody = GetComponent<Rigidbody2D>();
         }
 
 
@@ -84,11 +87,8 @@ namespace Tank
 
         private void MoveForward()
         {
-            Vector3 offest = Speed * Time.fixedDeltaTime * Forward;
-
-            TransformSyncComponent.SetNetworkPositionRpc(
-                TransformSyncComponent.Position.Value + offest
-            );
+            Vector3 velocity = Speed * Forward;
+            _bulletRigidbody.linearVelocity = velocity;
         }
     }
 }

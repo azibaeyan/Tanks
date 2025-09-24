@@ -1,6 +1,6 @@
 
+using System.Runtime.CompilerServices;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class NetworkTransformSync : NetworkBehaviour
@@ -71,25 +71,32 @@ public class NetworkTransformSync : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         SetOnSpawnPosition();
-        SetNetworkPositionFromLocal();
+        SetNetworkPositionFromLocalRpc();
     }
 
 
     private void FixedUpdate()
     {
-        InterpolateClientTransformSync();
+        if (!IsServer) InterpolateTransformSync();
+        SetNetworkTransformFromLocalRpc();
     }
 
 
     void OnCollisionStay(Collision collision)
     {
-        if (_enableColliderEffect) SetNetworkTransformFromLocal();
+        /*
+            We have to decide to keep this or not
+        */
+        if (_enableColliderEffect) SetNetworkTransformFromLocalRpc();
     }
 
 
     void OnCollisionStay2D(Collision2D collision)
     {
-        if (_enableColliderEffect) SetNetworkTransformFromLocal();
+        /*
+            We have to decide to keep this or not
+        */
+        if (_enableColliderEffect) SetNetworkTransformFromLocalRpc();
     }
 
 
@@ -100,12 +107,12 @@ public class NetworkTransformSync : NetworkBehaviour
         if (SpawnPosition.HasValue)
             SetNetworkPositionRpc(SpawnPosition.Value);
         else
-            SetNetworkPositionFromLocal();
+            SetNetworkPositionFromLocalRpc();
 
         if (SpawnRotationEuler.HasValue)
             SetNetworkRotationEulerRpc(SpawnRotationEuler.Value);
         else
-            SetNetworkRotationFromLocal();
+            SetNetworkRotationFromLocalRpc();
     }
 
 
@@ -135,36 +142,39 @@ public class NetworkTransformSync : NetworkBehaviour
     public void SetNetworkRotationQuaternionRpc(Quaternion rotationQuaternion) => RotationEuler.Value = rotationQuaternion.eulerAngles;
 
 
-    public void SetNetworkTransformFromLocal()
+    [Rpc(SendTo.Server)]
+    public void SetNetworkTransformFromLocalRpc()
     {
-        if (_positionSync) SetNetworkPositionFromLocal();
-        if (_rotationSync) SetNetworkRotationFromLocal();
+        if (_positionSync) SetNetworkPositionFromLocalRpc();
+        if (_rotationSync) SetNetworkRotationFromLocalRpc();
     }
 
 
-    public void SetNetworkPositionFromLocal()
+    [Rpc(SendTo.Server)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetNetworkPositionFromLocalRpc()
     {
-        if (!IsServer) return;
         SetNetworkPositionRpc(
             _localTransform ?
-                transform.localPosition : 
+                transform.localPosition :
                 transform.position
         );
     }
 
 
-    public void SetNetworkRotationFromLocal()
+    [Rpc(SendTo.Server)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetNetworkRotationFromLocalRpc()
     {
-        if (!IsServer) return;
         SetNetworkRotationQuaternionRpc(
-            _localTransform ? 
-                transform.localRotation : 
+            _localTransform ?
+                transform.localRotation :
                 transform.rotation
         );
     }
 
 
-    private void InterpolateClientTransformSync()
+    private void InterpolateTransformSync()
     {
         if (_positionSync)
         {
