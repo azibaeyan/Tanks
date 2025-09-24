@@ -43,29 +43,14 @@ public class NetworkTransformSync : NetworkBehaviour
 
     [SerializeField] private bool _localTransform;
 
+    [SerializeField] private float _positionMagnitudeThreshold;
+    [SerializeField] private float _rotationEulerAngleThreshold;
+
     [SerializeField] private float _positionInterpolationMaxDelta;
     [SerializeField] private float _rotationInterpolationQuaternionMaxDelta;
 
     [SerializeField] private bool _positionSync = true;
     [SerializeField] private bool _rotationSync = true;
-
-    [SerializeField] private bool _enableColliderEffect;
-    public bool EnableColliderEffect
-    {
-        get => _enableColliderEffect;
-        set
-        {
-            if (IsSpawned)
-            {
-#if UNITY_EDITOR
-                Debug.LogError("Modifiying EnableColliderEffect after Object spawn is not allowed!");
-#endif
-                return;
-            }
-
-            _enableColliderEffect = value;
-        }
-    }
 
 
     public override void OnNetworkSpawn()
@@ -78,25 +63,16 @@ public class NetworkTransformSync : NetworkBehaviour
     private void FixedUpdate()
     {
         if (!IsServer) InterpolateTransformSync();
-        SetNetworkTransformFromLocalRpc();
+        UpdateTransform();
     }
 
 
-    void OnCollisionStay(Collision collision)
+    private void UpdateTransform()
     {
-        /*
-            We have to decide to keep this or not
-        */
-        if (_enableColliderEffect) SetNetworkTransformFromLocalRpc();
-    }
-
-
-    void OnCollisionStay2D(Collision2D collision)
-    {
-        /*
-            We have to decide to keep this or not
-        */
-        if (_enableColliderEffect) SetNetworkTransformFromLocalRpc();
+        if ((transform.position - Position.Value).magnitude > _positionMagnitudeThreshold)
+            SetNetworkPositionFromLocalRpc();
+        if (Quaternion.Angle(transform.rotation, Quaternion.Euler(RotationEuler.Value)) > _rotationEulerAngleThreshold)
+            SetNetworkRotationFromLocalRpc(); 
     }
 
 

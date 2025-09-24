@@ -39,7 +39,6 @@ namespace Tank
             if (IsServer)
             {
                 LifeTime = GlobalTankProperties.Singleton.BulletLifeTime;
-
             }
 
             SpriteRenderer renderer = GetComponent<SpriteRenderer>();

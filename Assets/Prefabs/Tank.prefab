@@ -140,11 +140,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NetworkTransformSync
   ShowTopMostFoldoutHeaderGroup: 1
   _localTransform: 0
+  _positionMagnitudeThreshold: 0.01
+  _rotationEulerAngleThreshold: 2
   _positionInterpolationMaxDelta: 0.15
   _rotationInterpolationQuaternionMaxDelta: 0.9
   _positionSync: 1
   _rotationSync: 1
-  _enableColliderEffect: 0
 --- !u!114 &4633908772262985379
 MonoBehaviour:
   m_ObjectHideFlags: 0
